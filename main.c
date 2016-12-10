@@ -8,11 +8,11 @@
 #include "evaluate.h"
 #include "reader.h"
 
-void repl(FILE *input, environment **env) {
+void repl(FILE *input, environment **env, int interactive) {
   int check = 0;
 
   do {
-  	if (check == 0) {
+  	if (check == 0 && interactive < 2) {
   	  printf("evaluate> ");
   	}
 
@@ -34,7 +34,7 @@ int main(int argc, char *argv[]) {
   FILE *input = ((argc > 1) ? fopen(argv[1], "r") : stdin);
   environment *env = init_environment();
 
-  repl(input, &env);
+  repl(input, &env, argc);
 
   fclose(input);
 

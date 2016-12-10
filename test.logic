@@ -1,0 +1,6 @@
+(conjunction (implication p q) p)
+(conjunction (implication p q) (negation q))
+(conjunction (implication p q) (implication q r))
+(conjunction (disjunction p q) (negation p))
+(negation (conjunction p q))
+(negation (disjunction p q))
