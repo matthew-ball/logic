@@ -57,3 +57,11 @@ environment *init_environment() {
 
   return ptr;
 }
+
+void print_environment(const environment *env) {
+  while ((env)->value != NULL) {
+	print_expression((env)->value);
+	printf("\n");
+	env = (env)->next;
+  }
+}

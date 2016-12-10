@@ -45,8 +45,8 @@ expression *simplify_expression(expression *exp) {
   return exp;
 }
 
-expression *evaluate_expression(expression *exp, environment *env) {
-  add_to_environment(exp, &env);
+expression *evaluate_expression(expression *exp, environment **env) {
+  add_to_environment(exp, env);
 
-  return exp;
+  return simplify_expression(exp);
 }

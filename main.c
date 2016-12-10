@@ -8,7 +8,7 @@
 #include "evaluate.h"
 #include "reader.h"
 
-void repl(FILE *input, environment *env) {
+void repl(FILE *input, environment **env) {
   int check = 0;
 
   do {
@@ -19,7 +19,7 @@ void repl(FILE *input, environment *env) {
   	expression *ptr = read_expression(input);
 
   	if (ptr != NULL) {
-  	  print_expression(evaluate_expression(ptr, env)); printf("\n");
+  	  print_expression(ptr); printf(" => "); print_expression(evaluate_expression(ptr, env)); printf("\n");
 
   	  if (check != 0) {
   		check = 0;
@@ -34,7 +34,7 @@ int main(int argc, char *argv[]) {
   FILE *input = ((argc > 1) ? fopen(argv[1], "r") : stdin);
   environment *env = init_environment();
 
-  repl(input, env);
+  repl(input, &env);
 
   fclose(input);
 

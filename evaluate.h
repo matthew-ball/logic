@@ -7,6 +7,6 @@ expression *pure_literal_assign(expression *unit, expression *exp);
 expression *choose_literal(expression *exp);
 
 expression *simplify_expression(expression *exp);
-expression *evaluate_expression(expression *exp, environment *env);
+expression *evaluate_expression(expression *exp, environment **env);
 
 #endif

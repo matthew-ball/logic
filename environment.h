@@ -13,5 +13,6 @@ void add_to_environment(expression *exp, environment **env);
 expression *remove_from_environment(environment **env);
 expression *search_environment(expression *exp, const environment *env);
 environment *init_environment();
+void print_environment(const environment *env);
 
 #endif
