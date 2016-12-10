@@ -74,13 +74,13 @@ void print_expression(const expression *exp) {
 	//printf("%s (%s)", VARIABLE_NAME(exp), (VARIABLE_VALUE(exp) > 2) ? "true" : "false");
 	printf("%s", VARIABLE_NAME(exp));
   } else if (IS_NEGATION(exp)) {
-	printf("not "); print_expression(NEGATION(exp));
+	printf("(not "); print_expression(NEGATION(exp)); printf(")");
   } else if (IS_CONJUNCTION(exp)) {
-	print_expression(CONJUNCTION_LEFT(exp)); printf(" and "); print_expression(CONJUNCTION_RIGHT(exp));
+	printf("("); print_expression(CONJUNCTION_LEFT(exp)); printf(" and "); print_expression(CONJUNCTION_RIGHT(exp)); printf(")");
   } else if (IS_DISJUNCTION(exp)) {
-	print_expression(DISJUNCTION_LEFT(exp)); printf(" or "); print_expression(DISJUNCTION_RIGHT(exp));
+	printf("("); print_expression(DISJUNCTION_LEFT(exp)); printf(" or "); print_expression(DISJUNCTION_RIGHT(exp)); printf(")");
   } else if (IS_IMPLICATION(exp)) {
-	print_expression(IMPLICATION_RIGHT(exp)); printf(" if "); print_expression(IMPLICATION_LEFT(exp));
+	printf("("); print_expression(IMPLICATION_RIGHT(exp)); printf(" if "); print_expression(IMPLICATION_LEFT(exp)); printf(")");
   }
 }
 
