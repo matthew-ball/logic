@@ -1,6 +1,7 @@
 #ifndef EVALUATE_H
 #define EVALUATE_H
 
+expression *cnf_reduce(expression *exp);
 expression *cnf(expression *exp);
 expression *unit_propagate(expression *unit, expression *exp);
 expression *pure_literal_assign(expression *unit, expression *exp);

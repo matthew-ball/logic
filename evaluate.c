@@ -5,20 +5,31 @@
 #include "environment.h"
 #include "evaluate.h"
 
-expression *cnf(expression *exp) {
-  expression *ptr = exp;
-
-  if (IS_IMPLICATION(exp)) { /* implication */
-	ptr = disjunction(negation(IMPLICATION_LEFT(exp)), IMPLICATION_RIGHT(exp));
-  } else if (IS_DISJUNCTION(exp) && IS_CONJUNCTION(DISJUNCTION_RIGHT(exp))) { /* disjunctions in */
-	ptr = conjunction(disjunction(DISJUNCTION_LEFT(exp), CONJUNCTION_LEFT(DISJUNCTION_RIGHT(exp))), disjunction(DISJUNCTION_LEFT(exp), CONJUNCTION_RIGHT(DISJUNCTION_RIGHT(exp))));
-  } else if (IS_NEGATION(exp) && IS_NEGATION(NEGATION(exp))) { /* double negation */
-	ptr = NEGATION(NEGATION(exp));
+expression *cnf_reduce(expression *exp) {
+  if (IS_NEGATION(exp) && IS_NEGATION(NEGATION(exp))) { /* double negation */
+	return cnf_reduce(NEGATION(NEGATION(exp)));
   } else if (IS_NEGATION(exp) && IS_CONJUNCTION(NEGATION(exp))) { /* de morgan's conjunction */
-	ptr = disjunction(negation(CONJUNCTION_LEFT(NEGATION(exp))), negation(CONJUNCTION_RIGHT(NEGATION(exp))));
+  	return disjunction(cnf_reduce(negation(CONJUNCTION_LEFT(NEGATION(exp)))), cnf_reduce(negation(CONJUNCTION_RIGHT(NEGATION(exp)))));
   } else if (IS_NEGATION(exp) && IS_DISJUNCTION(NEGATION(exp))) { /* de morgan's disjunction */
-	ptr = conjunction(negation(DISJUNCTION_LEFT(NEGATION(exp))), negation(DISJUNCTION_RIGHT(NEGATION(exp))));
+  	return conjunction(cnf_reduce(negation(DISJUNCTION_LEFT(NEGATION(exp)))), cnf_reduce(negation(DISJUNCTION_RIGHT(NEGATION(exp)))));
+  } else if (IS_NEGATION(exp) && !IS_VARIABLE(NEGATION(exp))) {
+	return cnf_reduce(negation(cnf_reduce(NEGATION(exp))));
+  } if (IS_CONJUNCTION(exp)) { /* conjunction */
+	return conjunction(cnf_reduce(CONJUNCTION_LEFT(exp)), cnf_reduce(CONJUNCTION_RIGHT(exp)));
+  } else if (IS_DISJUNCTION(exp)) { /* disjunction */
+	return disjunction(cnf_reduce(DISJUNCTION_LEFT(exp)), cnf_reduce(DISJUNCTION_RIGHT(exp)));
+  } else if (IS_DISJUNCTION(exp) && IS_CONJUNCTION(DISJUNCTION_RIGHT(exp))) { /* distribution over disjunction */
+	return conjunction(disjunction(cnf_reduce(DISJUNCTION_LEFT(exp)), cnf_reduce(CONJUNCTION_LEFT(DISJUNCTION_RIGHT(exp)))),
+					   disjunction(cnf_reduce(DISJUNCTION_LEFT(exp)), cnf_reduce(CONJUNCTION_RIGHT(DISJUNCTION_RIGHT(exp)))));
+  } else if (IS_IMPLICATION(exp)) { /* implication */
+	return disjunction(cnf_reduce(negation(IMPLICATION_LEFT(exp))), cnf_reduce(IMPLICATION_RIGHT(exp)));
   }
+
+  return exp;
+}
+
+expression *cnf(expression *exp) {
+  expression *ptr = cnf_reduce(exp);
 
   printf("[%s] Conjunctive Normal Form: ", __func__); print_expression(ptr); printf("\n");
 
@@ -34,7 +45,9 @@ expression *pure_literal_assign(expression *unit, expression *exp) {
 }
 
 void filter_literals(expression *exp, environment **env) {
-  if (IS_CONJUNCTION(exp)) {
+  if (IS_NEGATION(exp) && !IS_VARIABLE(NEGATION(exp))) {
+	filter_literals(NEGATION(exp), env);
+  } else if (IS_CONJUNCTION(exp)) {
 	filter_literals(CONJUNCTION_LEFT(exp), env);
 	filter_literals(CONJUNCTION_RIGHT(exp), env);
   } else if (IS_DISJUNCTION(exp)) {
@@ -43,7 +56,7 @@ void filter_literals(expression *exp, environment **env) {
   } else if (IS_IMPLICATION(exp)) {
 	filter_literals(IMPLICATION_LEFT(exp), env);
 	filter_literals(IMPLICATION_RIGHT(exp), env);
-  } else if (IS_NEGATION(exp) || IS_VARIABLE(exp)) {
+  } else if ((IS_NEGATION(exp) && IS_VARIABLE(NEGATION(exp))) || IS_VARIABLE(exp)) {
 	add_to_environment(exp, env);
   }
 }
@@ -136,55 +149,61 @@ expression *dpll(expression *exp) {
 /* expression *disjunctive_syllogism(expression *exp); */
 
 /* // https://en.wikipedia.org/wiki/Propositional_calculus#Basic_and_derived_argument_forms */
-/* expression *simplify_expression(expression *exp) { */
-/*   if (IS_NEGATION(exp) && IS_DISJUNCTION(NEGATION(exp))) { /\* de morgan's disjunction *\/ */
-/* 	return conjunction(negation(simplify_expression(DISJUNCTION_LEFT(NEGATION(exp)))), negation(simplify_expression(DISJUNCTION_RIGHT(NEGATION(exp))))); */
-/*   } else if (IS_NEGATION(exp) && IS_CONJUNCTION(NEGATION(exp))) { /\* de morgan's conjunction *\/ */
-/* 	return disjunction(negation(CONJUNCTION_LEFT(NEGATION(exp))), negation(CONJUNCTION_RIGHT(NEGATION(exp)))); */
-/*   } else if (IS_NEGATION(exp) && IS_NEGATION(NEGATION(exp))) { /\* double negation *\/ */
-/* 	return simplify_expression(NEGATION(NEGATION(exp))); */
-/*   } else if (IS_CONJUNCTION(exp)) { */
-/* 	if (equal_expressions(simplify_expression(CONJUNCTION_LEFT(exp)), /\* same conjuncts *\/ */
-/* 						  simplify_expression(CONJUNCTION_RIGHT(exp)))) { */
-/* 	  return simplify_expression(CONJUNCTION_LEFT(exp)); */
-/* 	} else if (IS_IMPLICATION(CONJUNCTION_LEFT(exp)) && /\* modus ponens *\/ */
-/* 			   equal_expressions(simplify_expression(IMPLICATION_LEFT(CONJUNCTION_LEFT(exp))), */
-/* 								 simplify_expression(CONJUNCTION_RIGHT(exp)))) { */
-/* 	  return simplify_expression(IMPLICATION_RIGHT(CONJUNCTION_LEFT(exp))); */
-/* 	} else if (IS_IMPLICATION(CONJUNCTION_LEFT(exp)) && /\* modus tollens *\/ */
-/* 			   IS_NEGATION(CONJUNCTION_RIGHT(exp)) && */
-/* 			   equal_expressions(simplify_expression(IMPLICATION_RIGHT(CONJUNCTION_LEFT(exp))), */
-/* 								 simplify_expression(NEGATION(CONJUNCTION_RIGHT(exp))))) { */
-/* 	  return negation(simplify_expression(IMPLICATION_LEFT(CONJUNCTION_LEFT(exp)))); */
-/* 	} else if (IS_IMPLICATION(CONJUNCTION_LEFT(exp)) && /\* hypothetical syllogism *\/ */
-/* 			   IS_IMPLICATION(CONJUNCTION_RIGHT(exp)) && */
-/* 			   equal_expressions(simplify_expression(IMPLICATION_RIGHT(CONJUNCTION_LEFT(exp))), */
-/* 								 simplify_expression(IMPLICATION_LEFT(CONJUNCTION_RIGHT(exp))))) { */
-/* 	  return implication(simplify_expression(IMPLICATION_LEFT(CONJUNCTION_LEFT(exp))), */
-/* 						 simplify_expression(IMPLICATION_RIGHT(CONJUNCTION_RIGHT(exp)))); */
-/* 	} else if (IS_DISJUNCTION(CONJUNCTION_LEFT(exp)) && /\* disjunctive syllogism *\/ */
-/* 			   IS_NEGATION(CONJUNCTION_RIGHT(exp)) && */
-/* 			   equal_expressions(simplify_expression(DISJUNCTION_LEFT(CONJUNCTION_LEFT(exp))), */
-/* 								 simplify_expression(NEGATION(CONJUNCTION_RIGHT(exp))))) { */
-/* 	  return simplify_expression(DISJUNCTION_RIGHT(CONJUNCTION_LEFT(exp))); */
-/* 	} */
-/*   } else if (IS_DISJUNCTION(exp)) { */
-/* 	if (equal_expressions(simplify_expression(DISJUNCTION_LEFT(exp)), /\* same disjuncts *\/ */
-/* 						  simplify_expression(DISJUNCTION_RIGHT(exp)))) { */
-/* 	  return simplify_expression(DISJUNCTION_LEFT(exp)); */
-/* 	} */
-/*   } else if (IS_IMPLICATION(exp)) { */
-/* 	if (equal_expressions(simplify_expression(IMPLICATION_LEFT(exp)), /\* same antecedent and consequent *\/ */
-/* 						  simplify_expression(IMPLICATION_RIGHT(exp)))) { */
-/* 	  return simplify_expression(IMPLICATION_LEFT(exp)); */
-/* 	} */
-/*   } */
+expression *simplify_expression(expression *exp) {
+  if (IS_NEGATION(exp) && IS_DISJUNCTION(NEGATION(exp))) { /* de morgan's disjunction */
+	return conjunction(negation(simplify_expression(DISJUNCTION_LEFT(NEGATION(exp)))), negation(simplify_expression(DISJUNCTION_RIGHT(NEGATION(exp)))));
+  } else if (IS_NEGATION(exp) && IS_CONJUNCTION(NEGATION(exp))) { /* de morgan's conjunction */
+	return disjunction(negation(CONJUNCTION_LEFT(NEGATION(exp))), negation(CONJUNCTION_RIGHT(NEGATION(exp))));
+  } else if (IS_NEGATION(exp) && IS_NEGATION(NEGATION(exp))) { /* double negation */
+	return simplify_expression(NEGATION(NEGATION(exp)));
+  } else if (IS_CONJUNCTION(exp)) {
+	if (equal_expressions(simplify_expression(CONJUNCTION_LEFT(exp)), /* same conjuncts */
+						  simplify_expression(CONJUNCTION_RIGHT(exp)))) {
+	  return simplify_expression(CONJUNCTION_LEFT(exp));
+	} else if (IS_IMPLICATION(CONJUNCTION_LEFT(exp)) && /* modus ponens */
+			   equal_expressions(simplify_expression(IMPLICATION_LEFT(CONJUNCTION_LEFT(exp))),
+								 simplify_expression(CONJUNCTION_RIGHT(exp)))) {
+	  return simplify_expression(IMPLICATION_RIGHT(CONJUNCTION_LEFT(exp)));
+	} else if (IS_IMPLICATION(CONJUNCTION_LEFT(exp)) && /* modus tollens */
+			   IS_NEGATION(CONJUNCTION_RIGHT(exp)) &&
+			   equal_expressions(simplify_expression(IMPLICATION_RIGHT(CONJUNCTION_LEFT(exp))),
+								 simplify_expression(NEGATION(CONJUNCTION_RIGHT(exp))))) {
+	  return negation(simplify_expression(IMPLICATION_LEFT(CONJUNCTION_LEFT(exp))));
+	} else if (IS_IMPLICATION(CONJUNCTION_LEFT(exp)) && /* hypothetical syllogism */
+			   IS_IMPLICATION(CONJUNCTION_RIGHT(exp)) &&
+			   equal_expressions(simplify_expression(IMPLICATION_RIGHT(CONJUNCTION_LEFT(exp))),
+								 simplify_expression(IMPLICATION_LEFT(CONJUNCTION_RIGHT(exp))))) {
+	  return implication(simplify_expression(IMPLICATION_LEFT(CONJUNCTION_LEFT(exp))),
+						 simplify_expression(IMPLICATION_RIGHT(CONJUNCTION_RIGHT(exp))));
+	} else if (IS_DISJUNCTION(CONJUNCTION_LEFT(exp)) && /* disjunctive syllogism */
+			   IS_NEGATION(CONJUNCTION_RIGHT(exp)) &&
+			   equal_expressions(simplify_expression(DISJUNCTION_LEFT(CONJUNCTION_LEFT(exp))),
+								 simplify_expression(NEGATION(CONJUNCTION_RIGHT(exp))))) {
+	  return simplify_expression(DISJUNCTION_RIGHT(CONJUNCTION_LEFT(exp)));
+	}
+  } else if (IS_DISJUNCTION(exp)) {
+	if (equal_expressions(simplify_expression(DISJUNCTION_LEFT(exp)), /* same disjuncts */
+						  simplify_expression(DISJUNCTION_RIGHT(exp)))) {
+	  return simplify_expression(DISJUNCTION_LEFT(exp));
+	}
+  } else if (IS_IMPLICATION(exp)) {
+	if (equal_expressions(simplify_expression(IMPLICATION_LEFT(exp)), /* same antecedent and consequent */
+						  simplify_expression(IMPLICATION_RIGHT(exp)))) {
+	  return simplify_expression(IMPLICATION_LEFT(exp));
+	}
+  }
 
-/*   return exp; */
-/* } */
+  return exp;
+}
+
+expression *simplify(expression *exp) {
+  printf("[%s] Expression: ", __func__); print_expression(exp); printf("\n");
+
+  return simplify_expression(exp);
+}
 
 expression *evaluate_expression(expression *exp, environment **env) {
   add_to_environment(exp, env);
 
-  return dpll(exp);
+  return dpll(simplify(exp));
 }
