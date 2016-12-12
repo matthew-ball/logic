@@ -10,20 +10,11 @@ typedef struct {
   expression_type type;
 } expression;
 
-#define IS_VARIABLE(exp) ((exp)->type == VARIABLE)
-#define IS_NEGATION(exp) ((exp)->type == NEGATION)
-#define IS_CONJUNCTION(exp) ((exp)->type == CONJUNCTION)
-#define IS_DISJUNCTION(exp) ((exp)->type == DISJUNCTION)
-#define IS_IMPLICATION(exp) ((exp)->type == IMPLICATION)
-
 typedef struct {
   expression_type type;
   expression_value value;
   char *name;
 } variable_expression;
-
-#define VARIABLE_NAME(var) (((variable_expression *)(var))->name)
-#define VARIABLE_VALUE(var) (((variable_expression *)(var))->value)
 
 #define DEFINE_UNARY_OPERATOR(name) typedef struct { expression_type type; expression *left; } name##_expression;
 #define DEFINE_BINARY_OPERATOR(name) typedef struct { expression_type type; expression *left; expression *right; } name##_expression;
@@ -33,6 +24,13 @@ DEFINE_BINARY_OPERATOR(conjunction);
 DEFINE_BINARY_OPERATOR(disjunction);
 DEFINE_BINARY_OPERATOR(implication);
 
+#define IS_VARIABLE(exp) ((exp)->type == VARIABLE)
+#define IS_NEGATION(exp) ((exp)->type == NEGATION)
+#define IS_CONJUNCTION(exp) ((exp)->type == CONJUNCTION)
+#define IS_DISJUNCTION(exp) ((exp)->type == DISJUNCTION)
+#define IS_IMPLICATION(exp) ((exp)->type == IMPLICATION)
+#define VARIABLE_NAME(var) (((variable_expression *)(var))->name)
+#define VARIABLE_VALUE(var) (((variable_expression *)(var))->value)
 #define NEGATION(exp) (((negation_expression *)(exp))->left)
 #define CONJUNCTION_LEFT(exp) (((conjunction_expression *)(exp))->left)
 #define CONJUNCTION_RIGHT(exp) (((conjunction_expression *)(exp))->right)
@@ -47,6 +45,6 @@ expression *conjunction(expression *left, expression *right);
 expression *disjunction(expression *left, expression *right);
 expression *implication(expression *left, expression *right);
 void print_expression(const expression *exp);
-expression_value equal_expressions(expression *exp1, expression *exp2);
+expression_value equal_expressions(const expression *exp1, const expression *exp2);
 
 #endif

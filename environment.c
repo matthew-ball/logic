@@ -4,15 +4,31 @@
 #include "expression.h"
 #include "environment.h"
 
+expression *search_environment(expression *exp, const environment *env) {
+  while ((env)->value != NULL) {
+	if (equal_expressions(exp, (env)->value)) {
+	  return (env)->value;
+	}
+
+	env = (env)->next;
+  }
+
+  return NULL;
+}
+
 void add_to_environment(expression *exp, environment **env) {
-  environment *ptr = malloc(sizeof(environment));
+  if (search_environment(exp, (*env)) == NULL) {
+	environment *ptr = malloc(sizeof(environment));
 
-  MALLOC_CHECK(ptr);
+	MALLOC_CHECK(ptr);
 
-  ptr->value = exp;
-  ptr->next = *env;
+	ptr->value = exp;
+	ptr->next = *env;
 
-  *env = ptr;
+	(*env)->count++;
+
+	*env = ptr;
+  }
 }
 
 expression *remove_from_environment(environment **env) {
@@ -26,28 +42,20 @@ expression *remove_from_environment(environment **env) {
   ptr = (*env)->next;
   value = (*env)->value;
 
+  (*env)->count--;
+
   free(*env);
   *env = ptr;
 
   return value;
 }
 
-expression *search_environment(expression *exp, const environment *env) {
-  while ((env)->value != NULL) {
-	if (equal_expressions(exp, (env)->value)) {
-	  return (env)->value;
-	}
-
-	env = (env)->next;
-  }
-
-  return NULL;
-}
-
 environment *init_environment() {
   environment *ptr = malloc(sizeof(environment));
 
   MALLOC_CHECK(ptr);
+
+  ptr->count = 0;
 
   expression *t = variable("#T", TRUE);
   expression *f = variable("#F", FALSE);
@@ -59,9 +67,16 @@ environment *init_environment() {
 }
 
 void print_environment(const environment *env) {
+  printf("{");
+
   while ((env)->value != NULL) {
 	print_expression((env)->value);
-	printf("\n");
 	env = (env)->next;
+
+	if ((env)->next != NULL) {
+	  printf(" ");
+	}
   }
+
+  printf("}");
 }

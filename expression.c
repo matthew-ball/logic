@@ -71,10 +71,10 @@ void print_expression(const expression *exp) {
   if (exp == NULL) {
 	return;
   } else if (IS_VARIABLE(exp)) {
-	//printf("%s (%s)", VARIABLE_NAME(exp), (VARIABLE_VALUE(exp) > 2) ? "true" : "false");
+	//printf("%s (%s)", VARIABLE_NAME(exp), (VARIABLE_VALUE(exp) > 1) ? "true" : "false");
 	printf("%s", VARIABLE_NAME(exp));
   } else if (IS_NEGATION(exp)) {
-	printf("¬"); print_expression(NEGATION(exp)); /* printf(")"); */
+	printf("¬"); print_expression(NEGATION(exp));
   } else if (IS_CONJUNCTION(exp)) {
 	printf("("); print_expression(CONJUNCTION_LEFT(exp)); printf(" ∧ "); print_expression(CONJUNCTION_RIGHT(exp)); printf(")");
   } else if (IS_DISJUNCTION(exp)) {
@@ -84,7 +84,7 @@ void print_expression(const expression *exp) {
   }
 }
 
-expression_value equal_expressions(expression *exp1, expression *exp2) {
+expression_value equal_expressions(const expression *exp1, const expression *exp2) {
   if (IS_VARIABLE(exp1) && IS_VARIABLE(exp2)) {
   	if (strcmp(VARIABLE_NAME(exp1), VARIABLE_NAME(exp2)) == 0) {
   	  return TRUE;

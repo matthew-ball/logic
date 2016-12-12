@@ -19,7 +19,8 @@ void repl(FILE *input, environment **env, int interactive) {
   	expression *ptr = read_expression(input);
 
   	if (ptr != NULL) {
-  	  print_expression(ptr); printf(" => "); print_expression(evaluate_expression(ptr, env)); printf("\n");
+  	  //print_expression(ptr); printf(" = "); print_expression(evaluate_expression(ptr, env)); printf("\n");
+	  print_expression(evaluate_expression(ptr, env)); printf("\n");
 
   	  if (check != 0) {
   		check = 0;
