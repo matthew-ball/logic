@@ -1,4 +1,4 @@
-# A Simple Logic Environment
+# A Simple Propositional SAT Solver
 
 ## Expression
 
