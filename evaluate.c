@@ -6,8 +6,18 @@
 #include "environment.h"
 #include "evaluate.h"
 
-expression *conjunctive_normal_form(expression *exp) {
-  return exp;
+expression *cnf(expression *exp) {
+  expression *ptr = exp;
+
+  if (IS_IMPLICATION(exp)) {
+	ptr = disjunction(negation(IMPLICATION_LEFT(exp)), IMPLICATION_RIGHT(exp));
+  } else if (IS_DISJUNCTION(exp) && IS_CONJUNCTION(DISJUNCTION_RIGHT(exp))) {
+	ptr = conjunction(disjunction(DISJUNCTION_LEFT(exp), CONJUNCTION_LEFT(DISJUNCTION_RIGHT(exp))), disjunction(DISJUNCTION_LEFT(exp), CONJUNCTION_RIGHT(DISJUNCTION_RIGHT(exp))));
+  } // TODO: NEGATIONS
+
+  printf("[%s] Conjunctive Normal Form: ", __func__); print_expression(ptr); printf("\n");
+
+  return ptr;
 }
 
 expression *unit_propagate(expression *unit, expression *exp) {
@@ -57,7 +67,7 @@ environment *collect_literals(expression *exp) {
 /* } */
 
 expression *dpll(expression *exp) {
-  environment *env = collect_literals(conjunctive_normal_form(exp));
+  environment *env = collect_literals(cnf(exp));
 
   printf("[%s] Literals: ", __func__); print_environment(env); printf("\n");
 
