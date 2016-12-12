@@ -9,11 +9,17 @@
 expression *cnf(expression *exp) {
   expression *ptr = exp;
 
-  if (IS_IMPLICATION(exp)) {
+  if (IS_IMPLICATION(exp)) { /* implication */
 	ptr = disjunction(negation(IMPLICATION_LEFT(exp)), IMPLICATION_RIGHT(exp));
-  } else if (IS_DISJUNCTION(exp) && IS_CONJUNCTION(DISJUNCTION_RIGHT(exp))) {
+  } else if (IS_DISJUNCTION(exp) && IS_CONJUNCTION(DISJUNCTION_RIGHT(exp))) { /* disjunctions in */
 	ptr = conjunction(disjunction(DISJUNCTION_LEFT(exp), CONJUNCTION_LEFT(DISJUNCTION_RIGHT(exp))), disjunction(DISJUNCTION_LEFT(exp), CONJUNCTION_RIGHT(DISJUNCTION_RIGHT(exp))));
-  } // TODO: NEGATIONS
+  } else if (IS_NEGATION(exp) && IS_NEGATION(NEGATION(exp))) { /* double negation */
+	ptr = NEGATION(NEGATION(exp));
+  } else if (IS_NEGATION(exp) && IS_CONJUNCTION(NEGATION(exp))) { /* de morgan's conjunction */
+	ptr = disjunction(negation(CONJUNCTION_LEFT(NEGATION(exp))), negation(CONJUNCTION_RIGHT(NEGATION(exp))));
+  } else if (IS_NEGATION(exp) && IS_DISJUNCTION(NEGATION(exp))) { /* de morgan's disjunction */
+	ptr = conjunction(negation(DISJUNCTION_LEFT(NEGATION(exp))), negation(DISJUNCTION_RIGHT(NEGATION(exp))));
+  }
 
   printf("[%s] Conjunctive Normal Form: ", __func__); print_expression(ptr); printf("\n");
 
