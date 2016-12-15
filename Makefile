@@ -1,4 +1,4 @@
-TARGET = logic
+TARGET = sat-solver
 CC     = gcc
 OBJS   = expression.o environment.o evaluate.o reader.o main.o
 CFLAGS = -Wall -Werror -ggdb
