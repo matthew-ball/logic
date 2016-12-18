@@ -5,42 +5,37 @@
 #include "environment.h"
 #include "evaluate.h"
 
-expression *cnf_reduce(expression *exp) {
+expression *cnf(expression *exp) {
   if (IS_NEGATION(exp) && IS_NEGATION(NEGATION(exp))) { /* double negation */
-	return cnf_reduce(NEGATION(NEGATION(exp)));
+	return cnf(NEGATION(NEGATION(exp)));
   } else if (IS_NEGATION(exp) && IS_CONJUNCTION(NEGATION(exp))) { /* de morgan's conjunction */
-  	return disjunction(cnf_reduce(negation(CONJUNCTION_LEFT(NEGATION(exp)))), cnf_reduce(negation(CONJUNCTION_RIGHT(NEGATION(exp)))));
+  	return disjunction(cnf(negation(CONJUNCTION_LEFT(NEGATION(exp)))), cnf(negation(CONJUNCTION_RIGHT(NEGATION(exp)))));
   } else if (IS_NEGATION(exp) && IS_DISJUNCTION(NEGATION(exp))) { /* de morgan's disjunction */
-  	return conjunction(cnf_reduce(negation(DISJUNCTION_LEFT(NEGATION(exp)))), cnf_reduce(negation(DISJUNCTION_RIGHT(NEGATION(exp)))));
+  	return conjunction(cnf(negation(DISJUNCTION_LEFT(NEGATION(exp)))), cnf(negation(DISJUNCTION_RIGHT(NEGATION(exp)))));
   } else if (IS_NEGATION(exp) && !IS_VARIABLE(NEGATION(exp))) {
-	return cnf_reduce(negation(cnf_reduce(NEGATION(exp))));
+	return cnf(negation(cnf(NEGATION(exp))));
   } if (IS_CONJUNCTION(exp)) { /* conjunction */
-	return conjunction(cnf_reduce(CONJUNCTION_LEFT(exp)), cnf_reduce(CONJUNCTION_RIGHT(exp)));
+	return conjunction(cnf(CONJUNCTION_LEFT(exp)), cnf(CONJUNCTION_RIGHT(exp)));
   } else if (IS_DISJUNCTION(exp)) { /* disjunction */
-	return disjunction(cnf_reduce(DISJUNCTION_LEFT(exp)), cnf_reduce(DISJUNCTION_RIGHT(exp)));
-  } else if (IS_DISJUNCTION(exp) && IS_CONJUNCTION(DISJUNCTION_RIGHT(exp))) { /* distribution over disjunction */
-	return conjunction(disjunction(cnf_reduce(DISJUNCTION_LEFT(exp)), cnf_reduce(CONJUNCTION_LEFT(DISJUNCTION_RIGHT(exp)))),
-					   disjunction(cnf_reduce(DISJUNCTION_LEFT(exp)), cnf_reduce(CONJUNCTION_RIGHT(DISJUNCTION_RIGHT(exp)))));
+	return disjunction(cnf(DISJUNCTION_LEFT(exp)), cnf(DISJUNCTION_RIGHT(exp)));
+  } else if (IS_DISJUNCTION(exp) && IS_CONJUNCTION(DISJUNCTION_RIGHT(exp))) { /* distribution over disjunction (right) */
+	return conjunction(disjunction(cnf(DISJUNCTION_LEFT(exp)), cnf(CONJUNCTION_LEFT(DISJUNCTION_RIGHT(exp)))),
+					   disjunction(cnf(DISJUNCTION_LEFT(exp)), cnf(CONJUNCTION_RIGHT(DISJUNCTION_RIGHT(exp)))));
   } else if (IS_IMPLICATION(exp)) { /* implication */
-	return disjunction(cnf_reduce(negation(IMPLICATION_LEFT(exp))), cnf_reduce(IMPLICATION_RIGHT(exp)));
+	return disjunction(cnf(negation(IMPLICATION_LEFT(exp))), cnf(IMPLICATION_RIGHT(exp)));
   }
 
   return exp;
 }
 
-expression *cnf(expression *exp) {
-  expression *ptr = cnf_reduce(exp);
-
-  printf("[%s] Conjunctive Normal Form: ", __func__); print_expression(ptr); printf("\n");
-
-  return ptr;
-}
-
 expression *unit_propagate(expression *unit, expression *exp) {
+  // if a clause is a unit clause (i.e. it contains only a single unassigned literal) this clause can only be satisfied by assigning the necessary value to make this literal true
   return exp;
 }
 
 expression *pure_literal_assign(expression *unit, expression *exp) {
+  // if a propositional variable occurs with only one polarity in the formula, it is called pure
+  // pure literals can always be assigned in a way that makes all clauses containing them true
   return exp;
 }
 
@@ -56,7 +51,7 @@ void filter_literals(expression *exp, environment **env) {
   } else if (IS_IMPLICATION(exp)) {
 	filter_literals(IMPLICATION_LEFT(exp), env);
 	filter_literals(IMPLICATION_RIGHT(exp), env);
-  } else if ((IS_NEGATION(exp) && IS_VARIABLE(NEGATION(exp))) || IS_VARIABLE(exp)) {
+  } else if (IS_LITERAL(exp)) {
 	add_to_environment(exp, env);
   }
 }
@@ -72,6 +67,43 @@ environment *collect_literals(expression *exp) {
   return env;
 }
 
+// https://en.wikipedia.org/wiki/DPLL_algorithm
+expression *dpll(expression *exp, environment *env) {
+  //printf("Environment: "); print_environment(env); printf("\n");
+  printf("Expression: "); print_expression(exp); printf("\n");
+
+  exp = simplify(exp);
+  printf("- Simplified: "); print_expression(exp); printf("\n");
+
+  exp = cnf(exp);
+  printf("- Conjunctive Normal Form: "); print_expression(exp); printf("\n");
+
+  environment *literals = collect_literals(exp);
+
+  printf("Literals: "); print_environment(literals); printf("\n");
+
+  /* if (CONSISTENT_LITERALS(exp)) { */
+  /* 	return t; */
+  /* } else if (CONTAINS_EMPTY_CLAUSE(exp)) { */
+  /* 	return f; */
+  /* } */
+
+  /* for every unit clause unit in exp: exp <- unit_propagate(unit, exp); */
+  /* for every literal l (that occurs pure in exp): exp <- pure_literal_assign(l, exp); */
+
+  /* expression *literal = choose_literal(literals); */
+
+  /* return dpll(conjunction(exp, literal)) || dpll(conjunction(exp, negation(literal))); */
+
+  return exp;
+}
+
+expression *evaluate_expression(expression *exp, environment **env) {
+  add_to_environment(exp, env);
+
+  return dpll(exp, *env);
+}
+
 /* expression *choose_literal(environment *env) { */
 /*   srand(time(NULL)); */
 /*   int count = (rand() % env->count); */
@@ -84,126 +116,50 @@ environment *collect_literals(expression *exp) {
 /*   return env->value; */
 /* } */
 
-expression *dpll(expression *exp) {
-  environment *env = collect_literals(cnf(exp));
-
-  printf("[%s] Literals: ", __func__); print_environment(env); printf("\n");
-
-  /* while (env->value != NULL) { */
-  /* 	//printf("Literal: "); print_expression(env->value); printf("\n"); */
-  /* 	env = env->next; */
-  /* } */
-  //print_expression(choose_literal(env));
-
-  return exp;
-}
-
-/* expression *de_morgan_conjunction(expression *exp) { */
-/*   if (IS_NEGATION(exp) && IS_CONJUNCTION(NEGATION(exp))) { */
-/* 	return disjunction(negation(CONJUNCTION_LEFT(NEGATION(exp))), */
-/* 					   negation(CONJUNCTION_RIGHT(NEGATION(exp)))); */
-/*   } else { */
-/* 	return exp; */
-/*   } */
-/* } */
-
-/* expression *de_morgan_disjunction(expression *exp) { */
-/*   if (IS_NEGATION(exp) && IS_DISJUNCTION(NEGATION(exp))) { */
-/* 	return conjunction(negation(DISJUNCTION_LEFT(NEGATION(exp))), */
-/* 					   negation(DISJUNCTION_RIGHT(NEGATION(exp)))); */
-/*   } else { */
-/* 	return exp; */
-/*   } */
-/* } */
-
-/* expression *modus_ponens(expression *exp) { */
-/*   if (IS_IMPLICATION(CONJUNCTION_LEFT(exp)) && */
-/* 	  equal_expressions(IMPLICATION_LEFT(CONJUNCTION_LEFT(exp)), */
-/* 						CONJUNCTION_RIGHT(exp))) { */
-/* 	return IMPLICATION_RIGHT(CONJUNCTION_LEFT(exp)); */
-/*   } else { */
-/* 	return exp; */
-/*   } */
-/* } */
-
-/* expression *modus_tollens(expression *exp) { */
-/*   if (IS_IMPLICATION(CONJUNCTION_LEFT(exp)) && */
-/* 	  IS_NEGATION(CONJUNCTION_RIGHT(exp)) && */
-/* 	  equal_expressions(IMPLICATION_RIGHT(CONJUNCTION_LEFT(exp)), */
-/* 						NEGATION(CONJUNCTION_RIGHT(exp)))) { */
-/* 	return negation(IMPLICATION_LEFT(CONJUNCTION_LEFT(exp))); */
-/*   } else { */
-/* 	return exp; */
-/*   } */
-/* } */
-
-/* expression *double_negation(expression *exp) { */
-/*   if (IS_NEGATION(exp) && IS_NEGATION(NEGATION(exp))) { */
-/* 	return NEGATION(NEGATION(exp)); */
-/*   } else { */
-/* 	return exp; */
-/*   } */
-/* } */
-
-/* expression *hypothetical_syllogism(expression *exp); */
-/* expression *disjunctive_syllogism(expression *exp); */
-
 /* // https://en.wikipedia.org/wiki/Propositional_calculus#Basic_and_derived_argument_forms */
-expression *simplify_expression(expression *exp) {
+expression *simplify(expression *exp) {
   if (IS_NEGATION(exp) && IS_DISJUNCTION(NEGATION(exp))) { /* de morgan's disjunction */
-	return conjunction(negation(simplify_expression(DISJUNCTION_LEFT(NEGATION(exp)))), negation(simplify_expression(DISJUNCTION_RIGHT(NEGATION(exp)))));
+	return conjunction(negation(simplify(DISJUNCTION_LEFT(NEGATION(exp)))), negation(simplify(DISJUNCTION_RIGHT(NEGATION(exp)))));
   } else if (IS_NEGATION(exp) && IS_CONJUNCTION(NEGATION(exp))) { /* de morgan's conjunction */
 	return disjunction(negation(CONJUNCTION_LEFT(NEGATION(exp))), negation(CONJUNCTION_RIGHT(NEGATION(exp))));
   } else if (IS_NEGATION(exp) && IS_NEGATION(NEGATION(exp))) { /* double negation */
-	return simplify_expression(NEGATION(NEGATION(exp)));
+	return simplify(NEGATION(NEGATION(exp)));
   } else if (IS_CONJUNCTION(exp)) {
-	if (equal_expressions(simplify_expression(CONJUNCTION_LEFT(exp)), /* same conjuncts */
-						  simplify_expression(CONJUNCTION_RIGHT(exp)))) {
-	  return simplify_expression(CONJUNCTION_LEFT(exp));
+	if (equal_expressions(simplify(CONJUNCTION_LEFT(exp)), /* same conjuncts */
+						  simplify(CONJUNCTION_RIGHT(exp)))) {
+	  return simplify(CONJUNCTION_LEFT(exp));
 	} else if (IS_IMPLICATION(CONJUNCTION_LEFT(exp)) && /* modus ponens */
-			   equal_expressions(simplify_expression(IMPLICATION_LEFT(CONJUNCTION_LEFT(exp))),
-								 simplify_expression(CONJUNCTION_RIGHT(exp)))) {
-	  return simplify_expression(IMPLICATION_RIGHT(CONJUNCTION_LEFT(exp)));
+			   equal_expressions(simplify(IMPLICATION_LEFT(CONJUNCTION_LEFT(exp))),
+								 simplify(CONJUNCTION_RIGHT(exp)))) {
+	  return simplify(IMPLICATION_RIGHT(CONJUNCTION_LEFT(exp)));
 	} else if (IS_IMPLICATION(CONJUNCTION_LEFT(exp)) && /* modus tollens */
 			   IS_NEGATION(CONJUNCTION_RIGHT(exp)) &&
-			   equal_expressions(simplify_expression(IMPLICATION_RIGHT(CONJUNCTION_LEFT(exp))),
-								 simplify_expression(NEGATION(CONJUNCTION_RIGHT(exp))))) {
-	  return negation(simplify_expression(IMPLICATION_LEFT(CONJUNCTION_LEFT(exp))));
+			   equal_expressions(simplify(IMPLICATION_RIGHT(CONJUNCTION_LEFT(exp))),
+								 simplify(NEGATION(CONJUNCTION_RIGHT(exp))))) {
+	  return negation(simplify(IMPLICATION_LEFT(CONJUNCTION_LEFT(exp))));
 	} else if (IS_IMPLICATION(CONJUNCTION_LEFT(exp)) && /* hypothetical syllogism */
 			   IS_IMPLICATION(CONJUNCTION_RIGHT(exp)) &&
-			   equal_expressions(simplify_expression(IMPLICATION_RIGHT(CONJUNCTION_LEFT(exp))),
-								 simplify_expression(IMPLICATION_LEFT(CONJUNCTION_RIGHT(exp))))) {
-	  return implication(simplify_expression(IMPLICATION_LEFT(CONJUNCTION_LEFT(exp))),
-						 simplify_expression(IMPLICATION_RIGHT(CONJUNCTION_RIGHT(exp))));
+			   equal_expressions(simplify(IMPLICATION_RIGHT(CONJUNCTION_LEFT(exp))),
+								 simplify(IMPLICATION_LEFT(CONJUNCTION_RIGHT(exp))))) {
+	  return implication(simplify(IMPLICATION_LEFT(CONJUNCTION_LEFT(exp))),
+						 simplify(IMPLICATION_RIGHT(CONJUNCTION_RIGHT(exp))));
 	} else if (IS_DISJUNCTION(CONJUNCTION_LEFT(exp)) && /* disjunctive syllogism */
 			   IS_NEGATION(CONJUNCTION_RIGHT(exp)) &&
-			   equal_expressions(simplify_expression(DISJUNCTION_LEFT(CONJUNCTION_LEFT(exp))),
-								 simplify_expression(NEGATION(CONJUNCTION_RIGHT(exp))))) {
-	  return simplify_expression(DISJUNCTION_RIGHT(CONJUNCTION_LEFT(exp)));
+			   equal_expressions(simplify(DISJUNCTION_LEFT(CONJUNCTION_LEFT(exp))),
+								 simplify(NEGATION(CONJUNCTION_RIGHT(exp))))) {
+	  return simplify(DISJUNCTION_RIGHT(CONJUNCTION_LEFT(exp)));
 	}
   } else if (IS_DISJUNCTION(exp)) {
-	if (equal_expressions(simplify_expression(DISJUNCTION_LEFT(exp)), /* same disjuncts */
-						  simplify_expression(DISJUNCTION_RIGHT(exp)))) {
-	  return simplify_expression(DISJUNCTION_LEFT(exp));
+	if (equal_expressions(simplify(DISJUNCTION_LEFT(exp)), /* same disjuncts */
+						  simplify(DISJUNCTION_RIGHT(exp)))) {
+	  return simplify(DISJUNCTION_LEFT(exp));
 	}
   } else if (IS_IMPLICATION(exp)) {
-	if (equal_expressions(simplify_expression(IMPLICATION_LEFT(exp)), /* same antecedent and consequent */
-						  simplify_expression(IMPLICATION_RIGHT(exp)))) {
-	  return simplify_expression(IMPLICATION_LEFT(exp));
+	if (equal_expressions(simplify(IMPLICATION_LEFT(exp)), /* same antecedent and consequent */
+						  simplify(IMPLICATION_RIGHT(exp)))) {
+	  return simplify(IMPLICATION_LEFT(exp));
 	}
   }
 
   return exp;
-}
-
-expression *simplify(expression *exp) {
-  printf("[%s] Expression: ", __func__); print_expression(exp); printf("\n");
-
-  return simplify_expression(exp);
-}
-
-expression *evaluate_expression(expression *exp, environment **env) {
-  add_to_environment(exp, env);
-
-  return dpll(simplify(exp));
 }

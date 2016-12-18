@@ -38,12 +38,13 @@ DEFINE_BINARY_OPERATOR(implication);
 #define DISJUNCTION_RIGHT(exp) (((disjunction_expression *)(exp))->right)
 #define IMPLICATION_LEFT(exp) (((implication_expression *)(exp))->left)
 #define IMPLICATION_RIGHT(exp) (((implication_expression *)(exp))->right)
+#define IS_LITERAL(exp) (IS_VARIABLE(exp) || (IS_NEGATION(exp) && IS_VARIABLE(NEGATION(exp))))
 
-expression *variable(const char *name, expression_value value);
-expression *negation(expression *left);
-expression *conjunction(expression *left, expression *right);
-expression *disjunction(expression *left, expression *right);
-expression *implication(expression *left, expression *right);
+inline expression *variable(const char *name, expression_value value);
+inline expression *negation(expression *left);
+inline expression *conjunction(expression *left, expression *right);
+inline expression *disjunction(expression *left, expression *right);
+inline expression *implication(expression *left, expression *right);
 void print_expression(const expression *exp);
 expression_value equal_expressions(const expression *exp1, const expression *exp2);
 

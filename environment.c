@@ -74,7 +74,7 @@ void print_environment(const environment *env) {
 	env = (env)->next;
 
 	if ((env)->next != NULL) {
-	  printf(" ");
+	  printf(", ");
 	}
   }
 

@@ -4,7 +4,7 @@
 
 #include "expression.h"
 
-expression *variable(const char *name, expression_value value) {
+inline expression *variable(const char *name, expression_value value) {
   variable_expression *ptr = malloc(sizeof(variable_expression));
 
   MALLOC_CHECK(ptr);
@@ -20,7 +20,7 @@ expression *variable(const char *name, expression_value value) {
   return (expression *)ptr;
 }
 
-expression *negation(expression *left) {
+inline expression *negation(expression *left) {
   negation_expression *ptr = malloc(sizeof(negation_expression));
 
   MALLOC_CHECK(ptr);
@@ -31,7 +31,7 @@ expression *negation(expression *left) {
   return (expression *)ptr;
 }
 
-expression *conjunction(expression *left, expression *right) {
+inline expression *conjunction(expression *left, expression *right) {
   conjunction_expression *ptr = malloc(sizeof(conjunction_expression));
 
   MALLOC_CHECK(ptr);
@@ -43,7 +43,7 @@ expression *conjunction(expression *left, expression *right) {
   return (expression *)ptr;
 }
 
-expression *disjunction(expression *left, expression *right) {
+inline expression *disjunction(expression *left, expression *right) {
   disjunction_expression *ptr = malloc(sizeof(disjunction_expression));
 
   MALLOC_CHECK(ptr);
@@ -55,7 +55,7 @@ expression *disjunction(expression *left, expression *right) {
   return (expression *)ptr;
 }
 
-expression *implication(expression *left, expression *right) {
+inline expression *implication(expression *left, expression *right) {
   implication_expression *ptr = malloc(sizeof(implication_expression));
 
   MALLOC_CHECK(ptr);
