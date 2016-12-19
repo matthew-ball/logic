@@ -25,7 +25,7 @@ void add_to_environment(expression *exp, environment **env) {
 	ptr->value = exp;
 	ptr->next = *env;
 
-	(*env)->count++;
+	ptr->count = (*env)->count + 1;
 
 	*env = ptr;
   }
@@ -50,6 +50,9 @@ expression *remove_from_environment(environment **env) {
   return value;
 }
 
+expression *t;
+expression *f;
+
 environment *init_environment() {
   environment *ptr = malloc(sizeof(environment));
 
@@ -57,8 +60,8 @@ environment *init_environment() {
 
   ptr->count = 0;
 
-  expression *t = variable("#T", TRUE);
-  expression *f = variable("#F", FALSE);
+  t = variable("#T", TRUE);
+  f = variable("#F", FALSE);
 
   add_to_environment(t, &ptr);
   add_to_environment(f, &ptr);

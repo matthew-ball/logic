@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 
 #include "expression.h"
 #include "environment.h"
@@ -67,13 +68,34 @@ environment *collect_literals(expression *exp) {
   return env;
 }
 
+expression *choose_literal(environment *env) {
+  srand(time(NULL));
+  int random = rand() % env->count, i;
+
+  for (i = 0; i < random; i++) {
+	env = env->next;
+  }
+
+  return env->value;
+}
+
+int consistent_literals(expression *exp) {
+  //environment *literals = collect_literals(exp);
+
+  return 0;
+}
+
+int contains_empty_clause(expression *exp) {
+  return 0;
+}
+
 // https://en.wikipedia.org/wiki/DPLL_algorithm
 expression *dpll(expression *exp, environment *env) {
   //printf("Environment: "); print_environment(env); printf("\n");
   printf("Expression: "); print_expression(exp); printf("\n");
 
-  exp = simplify(exp);
-  printf("- Simplified: "); print_expression(exp); printf("\n");
+  //exp = simplify(exp);
+  //printf("- Simplified: "); print_expression(exp); printf("\n");
 
   exp = cnf(exp);
   printf("- Conjunctive Normal Form: "); print_expression(exp); printf("\n");
@@ -82,11 +104,11 @@ expression *dpll(expression *exp, environment *env) {
 
   printf("Literals: "); print_environment(literals); printf("\n");
 
-  /* if (CONSISTENT_LITERALS(exp)) { */
-  /* 	return t; */
-  /* } else if (CONTAINS_EMPTY_CLAUSE(exp)) { */
-  /* 	return f; */
-  /* } */
+  if (consistent_literals(exp)) {
+  	return t;
+  } else if (contains_empty_clause(exp)) {
+  	return f;
+  }
 
   /* for every unit clause unit in exp: exp <- unit_propagate(unit, exp); */
   /* for every literal l (that occurs pure in exp): exp <- pure_literal_assign(l, exp); */
@@ -103,18 +125,6 @@ expression *evaluate_expression(expression *exp, environment **env) {
 
   return dpll(exp, *env);
 }
-
-/* expression *choose_literal(environment *env) { */
-/*   srand(time(NULL)); */
-/*   int count = (rand() % env->count); */
-
-/*   while (count > 0) { */
-/* 	env = env->next; */
-/* 	count--; */
-/*   } */
-
-/*   return env->value; */
-/* } */
 
 /* // https://en.wikipedia.org/wiki/Propositional_calculus#Basic_and_derived_argument_forms */
 expression *simplify(expression *exp) {
