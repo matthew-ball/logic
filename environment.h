@@ -1,19 +1,21 @@
 #ifndef ENVIRONMENT_H
 #define ENVIRONMENT_H
 
-typedef struct node {
-  expression *value;
-  int count;
-  struct node *next;
-} environment;
+typedef struct _environment_t environment_t;
 
-extern expression *t;
-extern expression *f;
+typedef struct _environment_t {
+  expression_t *value;
+  size_t count;
+  environment_t *next;
+} environment_t;
 
-expression *search_environment(expression *exp, const environment *env);
-void add_to_environment(expression *exp, environment **env);
-expression *remove_from_environment(environment **env);
-environment *init_environment();
-void print_environment(const environment *env);
+extern expression_t *t;
+extern expression_t *f;
+
+expression_t *search_environment(expression_t *exp, const environment_t *env);
+void add_to_environment(expression_t *exp, environment_t **env);
+expression_t *remove_from_environment(environment_t **env);
+environment_t *init_environment();
+void print_environment(const environment_t *env);
 
 #endif

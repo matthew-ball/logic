@@ -4,87 +4,80 @@
 
 #include "expression.h"
 
-inline expression *variable(const char *name, expression_value value) {
-  variable_expression *ptr = malloc(sizeof(variable_expression));
+expression_t *variable(const char *name, expression_value value) {
+  variable_expression_t *ptr = malloc(sizeof(*ptr));
 
   MALLOC_CHECK(ptr);
-
   ptr->type = VARIABLE;
   ptr->value = value;
+  ptr->name = malloc(strlen(name) + 1);
+  MALLOC_CHECK(ptr->name);
+  strcpy(ptr->name, name);
 
-  char *tmp = malloc(strlen(name) + 1);
-
-  strcpy(tmp, name);
-  ptr->name = tmp;
-
-  return (expression *)ptr;
+  return (expression_t *)ptr;
 }
 
-inline expression *negation(expression *left) {
-  negation_expression *ptr = malloc(sizeof(negation_expression));
+expression_t *negation(expression_t *left) {
+  negation_expression_t *ptr = malloc(sizeof(*ptr));
 
   MALLOC_CHECK(ptr);
-
   ptr->type = NEGATION;
   ptr->left = left;
 
-  return (expression *)ptr;
+  return (expression_t *)ptr;
 }
 
-inline expression *conjunction(expression *left, expression *right) {
-  conjunction_expression *ptr = malloc(sizeof(conjunction_expression));
+expression_t *conjunction(expression_t *left, expression_t *right) {
+  conjunction_expression_t *ptr = malloc(sizeof(*ptr));
 
   MALLOC_CHECK(ptr);
-
   ptr->type = CONJUNCTION;
   ptr->left = left;
   ptr->right = right;
 
-  return (expression *)ptr;
+  return (expression_t *)ptr;
 }
 
-inline expression *disjunction(expression *left, expression *right) {
-  disjunction_expression *ptr = malloc(sizeof(disjunction_expression));
+expression_t *disjunction(expression_t *left, expression_t *right) {
+  disjunction_expression_t *ptr = malloc(sizeof(*ptr));
 
   MALLOC_CHECK(ptr);
-
   ptr->type = DISJUNCTION;
   ptr->left = left;
   ptr->right = right;
 
-  return (expression *)ptr;
+  return (expression_t *)ptr;
 }
 
-inline expression *implication(expression *left, expression *right) {
-  implication_expression *ptr = malloc(sizeof(implication_expression));
+expression_t *implication(expression_t *left, expression_t *right) {
+  implication_expression_t *ptr = malloc(sizeof(*ptr));
 
   MALLOC_CHECK(ptr);
-
   ptr->type = IMPLICATION;
   ptr->left = left;
   ptr->right = right;
 
-  return (expression *)ptr;
+  return (expression_t *)ptr;
 }
 
-void print_expression(const expression *exp) {
-  if (exp == NULL) {
+void print_expression(const expression_t *expression) {
+  switch (expression->type) {
+  case VARIABLE:
+	printf("%s", VARIABLE_NAME(expression)); break;
+  case NEGATION:
+	printf("¬"); print_expression(NEGATION(expression)); break;
+  case CONJUNCTION:
+	printf("("); print_expression(CONJUNCTION_LEFT(expression)); printf(" ∧ "); print_expression(CONJUNCTION_RIGHT(expression)); printf(")"); break;
+  case DISJUNCTION:
+	printf("("); print_expression(DISJUNCTION_LEFT(expression)); printf(" ∨ "); print_expression(DISJUNCTION_RIGHT(expression)); printf(")"); break;
+  case IMPLICATION:
+	printf("("); print_expression(IMPLICATION_LEFT(expression)); printf(" → "); print_expression(IMPLICATION_RIGHT(expression)); printf(")"); break;
+  default:
 	return;
-  } else if (IS_VARIABLE(exp)) {
-	//printf("%s (%s)", VARIABLE_NAME(exp), (VARIABLE_VALUE(exp) > 1) ? "true" : "false");
-	printf("%s", VARIABLE_NAME(exp));
-  } else if (IS_NEGATION(exp)) {
-	printf("¬"); print_expression(NEGATION(exp));
-  } else if (IS_CONJUNCTION(exp)) {
-	printf("("); print_expression(CONJUNCTION_LEFT(exp)); printf(" ∧ "); print_expression(CONJUNCTION_RIGHT(exp)); printf(")");
-  } else if (IS_DISJUNCTION(exp)) {
-	printf("("); print_expression(DISJUNCTION_LEFT(exp)); printf(" ∨ "); print_expression(DISJUNCTION_RIGHT(exp)); printf(")");
-  } else if (IS_IMPLICATION(exp)) {
-	printf("("); print_expression(IMPLICATION_LEFT(exp)); printf(" → "); print_expression(IMPLICATION_RIGHT(exp)); printf(")");
   }
 }
 
-expression_value equal_expressions(const expression *exp1, const expression *exp2) {
+expression_value equal_expressions(const expression_t *exp1, const expression_t *exp2) {
   if (IS_VARIABLE(exp1) && IS_VARIABLE(exp2)) {
   	if (strcmp(VARIABLE_NAME(exp1), VARIABLE_NAME(exp2)) == 0) {
   	  return TRUE;

@@ -3,7 +3,7 @@
 
 #define MAX_BUFFER 1024
 
-expression *next_token(FILE *input);
-expression *read_expression(FILE *input);
+expression_t *next_token(FILE *input);
+expression_t *read_expression(FILE *input);
 
 #endif

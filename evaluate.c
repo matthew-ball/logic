@@ -6,7 +6,7 @@
 #include "environment.h"
 #include "evaluate.h"
 
-expression *cnf(expression *exp) {
+expression_t *cnf(expression_t *exp) {
   if (IS_NEGATION(exp) && IS_NEGATION(NEGATION(exp))) { /* double negation */
 	return cnf(NEGATION(NEGATION(exp)));
   } else if (IS_NEGATION(exp) && IS_CONJUNCTION(NEGATION(exp))) { /* de morgan's conjunction */
@@ -29,18 +29,18 @@ expression *cnf(expression *exp) {
   return exp;
 }
 
-expression *unit_propagate(expression *unit, expression *exp) {
+expression_t *unit_propagate(expression_t *unit, expression_t *exp) {
   // if a clause is a unit clause (i.e. it contains only a single unassigned literal) this clause can only be satisfied by assigning the necessary value to make this literal true
   return exp;
 }
 
-expression *pure_literal_assign(expression *unit, expression *exp) {
+expression_t *pure_literal_assign(expression_t *unit, expression_t *exp) {
   // if a propositional variable occurs with only one polarity in the formula, it is called pure
   // pure literals can always be assigned in a way that makes all clauses containing them true
   return exp;
 }
 
-void filter_literals(expression *exp, environment **env) {
+void filter_literals(expression_t *exp, environment_t **env) {
   if (IS_NEGATION(exp) && !IS_VARIABLE(NEGATION(exp))) {
 	filter_literals(NEGATION(exp), env);
   } else if (IS_CONJUNCTION(exp)) {
@@ -57,8 +57,8 @@ void filter_literals(expression *exp, environment **env) {
   }
 }
 
-environment *collect_literals(expression *exp) {
-  environment *env = malloc(sizeof(environment));
+environment_t *collect_literals(expression_t *exp) {
+  environment_t *env = malloc(sizeof(*env));
 
   MALLOC_CHECK(env);
   env->count = 0;
@@ -68,9 +68,9 @@ environment *collect_literals(expression *exp) {
   return env;
 }
 
-expression *choose_literal(environment *env) {
+expression_t *choose_literal(environment_t *env) {
   srand(time(NULL));
-  int random = rand() % env->count, i;
+  size_t random = rand() % env->count, i;
 
   for (i = 0; i < random; i++) {
 	env = env->next;
@@ -79,18 +79,18 @@ expression *choose_literal(environment *env) {
   return env->value;
 }
 
-int consistent_literals(expression *exp) {
+int consistent_literals(expression_t *exp) {
   //environment *literals = collect_literals(exp);
 
   return 0;
 }
 
-int contains_empty_clause(expression *exp) {
+int contains_empty_clause(expression_t *exp) {
   return 0;
 }
 
 // https://en.wikipedia.org/wiki/DPLL_algorithm
-expression *dpll(expression *exp, environment *env) {
+expression_t *dpll(expression_t *exp, environment_t *env) {
   //printf("Environment: "); print_environment(env); printf("\n");
   printf("Expression: "); print_expression(exp); printf("\n");
 
@@ -100,7 +100,7 @@ expression *dpll(expression *exp, environment *env) {
   exp = cnf(exp);
   printf("- Conjunctive Normal Form: "); print_expression(exp); printf("\n");
 
-  environment *literals = collect_literals(exp);
+  environment_t *literals = collect_literals(exp);
 
   printf("Literals: "); print_environment(literals); printf("\n");
 
@@ -120,14 +120,14 @@ expression *dpll(expression *exp, environment *env) {
   return exp;
 }
 
-expression *evaluate_expression(expression *exp, environment **env) {
+expression_t *evaluate_expression(expression_t *exp, environment_t **env) {
   add_to_environment(exp, env);
 
   return dpll(exp, *env);
 }
 
 /* // https://en.wikipedia.org/wiki/Propositional_calculus#Basic_and_derived_argument_forms */
-expression *simplify(expression *exp) {
+expression_t *simplify(expression_t *exp) {
   if (IS_NEGATION(exp) && IS_DISJUNCTION(NEGATION(exp))) { /* de morgan's disjunction */
 	return conjunction(negation(simplify(DISJUNCTION_LEFT(NEGATION(exp)))), negation(simplify(DISJUNCTION_RIGHT(NEGATION(exp)))));
   } else if (IS_NEGATION(exp) && IS_CONJUNCTION(NEGATION(exp))) { /* de morgan's conjunction */

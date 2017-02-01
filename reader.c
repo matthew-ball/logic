@@ -6,7 +6,7 @@
 #include "expression.h"
 #include "reader.h"
 
-expression *next_token(FILE *input) {
+expression_t *next_token(FILE *input) {
   char buffer[MAX_BUFFER];
   int index = 0, ch = getc(input);
 
@@ -44,8 +44,8 @@ expression *next_token(FILE *input) {
   return variable(buffer, FALSE);
 }
 
-expression *read_expression(FILE *input) {
-  expression *token = next_token(input);
+expression_t *read_expression(FILE *input) {
+  expression_t *token = next_token(input);
 
   if (strcmp(VARIABLE_NAME(token), ")") == 0) {
 	return NULL;

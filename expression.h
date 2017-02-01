@@ -1,23 +1,23 @@
 #ifndef EXPRESSION_H
 #define EXPRESSION_H
 
-#define MALLOC_CHECK(ptr) ({ if ((ptr) == NULL) { fprintf(stderr, "[%s] malloc failed\n", __func__); exit(EXIT_FAILURE); } })
+#define MALLOC_CHECK(ptr) ({ if ((!ptr)) { fprintf(stderr, "[%s] malloc failed\n", __func__); exit(EXIT_FAILURE); } })
 
 typedef enum { VARIABLE, NEGATION, CONJUNCTION, DISJUNCTION, IMPLICATION } expression_type;
 typedef enum { FALSE, TRUE } expression_value;
 
 typedef struct {
   expression_type type;
-} expression;
+} expression_t;
 
 typedef struct {
   expression_type type;
   expression_value value;
   char *name;
-} variable_expression;
+} variable_expression_t;
 
-#define DEFINE_UNARY_OPERATOR(name) typedef struct { expression_type type; expression *left; } name##_expression;
-#define DEFINE_BINARY_OPERATOR(name) typedef struct { expression_type type; expression *left; expression *right; } name##_expression;
+#define DEFINE_UNARY_OPERATOR(name) typedef struct { expression_type type; expression_t *left; } name##_expression_t;
+#define DEFINE_BINARY_OPERATOR(name) typedef struct { expression_type type; expression_t *left; expression_t *right; } name##_expression_t;
 
 DEFINE_UNARY_OPERATOR(negation);
 DEFINE_BINARY_OPERATOR(conjunction);
@@ -29,23 +29,24 @@ DEFINE_BINARY_OPERATOR(implication);
 #define IS_CONJUNCTION(exp) ((exp)->type == CONJUNCTION)
 #define IS_DISJUNCTION(exp) ((exp)->type == DISJUNCTION)
 #define IS_IMPLICATION(exp) ((exp)->type == IMPLICATION)
-#define VARIABLE_NAME(var) (((variable_expression *)(var))->name)
-#define VARIABLE_VALUE(var) (((variable_expression *)(var))->value)
-#define NEGATION(exp) (((negation_expression *)(exp))->left)
-#define CONJUNCTION_LEFT(exp) (((conjunction_expression *)(exp))->left)
-#define CONJUNCTION_RIGHT(exp) (((conjunction_expression *)(exp))->right)
-#define DISJUNCTION_LEFT(exp) (((disjunction_expression *)(exp))->left)
-#define DISJUNCTION_RIGHT(exp) (((disjunction_expression *)(exp))->right)
-#define IMPLICATION_LEFT(exp) (((implication_expression *)(exp))->left)
-#define IMPLICATION_RIGHT(exp) (((implication_expression *)(exp))->right)
 #define IS_LITERAL(exp) (IS_VARIABLE(exp) || (IS_NEGATION(exp) && IS_VARIABLE(NEGATION(exp))))
 
-inline expression *variable(const char *name, expression_value value);
-inline expression *negation(expression *left);
-inline expression *conjunction(expression *left, expression *right);
-inline expression *disjunction(expression *left, expression *right);
-inline expression *implication(expression *left, expression *right);
-void print_expression(const expression *exp);
-expression_value equal_expressions(const expression *exp1, const expression *exp2);
+#define VARIABLE_NAME(var) (((variable_expression_t *)(var))->name)
+#define VARIABLE_VALUE(var) (((variable_expression_t *)(var))->value)
+#define NEGATION(exp) (((negation_expression_t *)(exp))->left)
+#define CONJUNCTION_LEFT(exp) (((conjunction_expression_t *)(exp))->left)
+#define CONJUNCTION_RIGHT(exp) (((conjunction_expression_t *)(exp))->right)
+#define DISJUNCTION_LEFT(exp) (((disjunction_expression_t *)(exp))->left)
+#define DISJUNCTION_RIGHT(exp) (((disjunction_expression_t *)(exp))->right)
+#define IMPLICATION_LEFT(exp) (((implication_expression_t *)(exp))->left)
+#define IMPLICATION_RIGHT(exp) (((implication_expression_t *)(exp))->right)
+
+expression_t *variable(const char *name, expression_value value);
+expression_t *negation(expression_t *left);
+expression_t *conjunction(expression_t *left, expression_t *right);
+expression_t *disjunction(expression_t *left, expression_t *right);
+expression_t *implication(expression_t *left, expression_t *right);
+void print_expression(const expression_t *exp);
+expression_value equal_expressions(const expression_t *exp1, const expression_t *exp2);
 
 #endif

@@ -8,7 +8,7 @@
 #include "evaluate.h"
 #include "reader.h"
 
-void repl(FILE *input, environment **env, int interactive) {
+void repl(FILE *input, environment_t **env, int interactive) {
   int check = 0;
 
   do {
@@ -16,7 +16,7 @@ void repl(FILE *input, environment **env, int interactive) {
   	  printf("evaluate> ");
   	}
 
-  	expression *ptr = read_expression(input);
+  	expression_t *ptr = read_expression(input);
 
   	if (ptr != NULL) {
   	  //print_expression(ptr); printf(" = "); print_expression(evaluate_expression(ptr, env)); printf("\n");
@@ -33,7 +33,13 @@ void repl(FILE *input, environment **env, int interactive) {
 
 int main(int argc, char *argv[]) {
   FILE *input = ((argc > 1) ? fopen(argv[1], "r") : stdin);
-  environment *env = init_environment();
+
+  if (!input) {
+	fprintf(stderr, "[%s] failed to open file\n", __func__);
+	exit(EXIT_FAILURE);
+  }
+
+  environment_t *env = init_environment();
 
   repl(input, &env, argc);
 
